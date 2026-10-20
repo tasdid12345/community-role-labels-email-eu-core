@@ -1,25 +1,26 @@
-# Class-balanced LightGBM vs random forest for labelled community membership
+# email-Eu-core department labels: random forest baseline vs CV-tuned LightGBM
 
-Motivation: The paper "Amoc: A multifaceted machine learning-based toolkit for analysing cybercriminal communities on the darknet" (2021) argues that machine learning on network structure can help analyse communities in darknet forums. This experiment asks whether a more carefully built model can do better on a simpler, public proxy task.
+## Question
+Can a class-balanced, CV-tuned LightGBM model with neighbourhood structure features beat a standard random forest on structural features at predicting labelled community membership of nodes in a public communication network?
 
-Question: Can a class-balanced, CV-tuned LightGBM model with neighbourhood structure features beat a standard random forest on structural features at predicting labelled community membership of nodes in a public communication network?
+## Data
+SNAP email-Eu-core graph and department labels (downloaded at runtime from snap.stanford.edu). Department labels stand in for community membership; the original darknet forum data is not public.
 
-Dataset: SNAP email-Eu-core graph with its department labels (about 1,000 nodes, about 25,000 directed edges). This is a stand-in, not the paper's own darknet data, so `same_as_paper` is false.
+## Split
+A single stratified 70/30 node-level split with seed 42. Nodes belonging to departments with only one member cannot be stratified, so they are always placed in the training set; all other nodes are split stratified by department.
 
-Baseline: a standard random forest on basic per-node structural features (degree, in/out degree, clustering coefficient, PageRank).
+## Method
+- Baseline: random forest (500 trees) on degree, in-degree, out-degree, clustering coefficient and PageRank.
+- Improved: class-balanced LightGBM, hyper-parameters chosen by 5-fold CV macro-F1 on training nodes only, using the baseline features plus neighbour-degree statistics, neighbour PageRank and clustering means, reciprocity and k-core number.
+- Both models are scored once on the same test nodes, with model seeds 42, 43 and 44.
+- Metric: macro-F1 on the held-out test nodes (higher is better).
 
-Improved model: a class-balanced LightGBM tuned by 5-fold cross-validation on the training nodes, using the same features plus neighbour-degree statistics, PageRank and clustering of neighbours, reciprocity, and k-core number.
-
-Both models use the same stratified 70/30 node split (seed 42), the same evaluation function, and seeds 42, 43 and 44.
-
-## How to run
-
+## Running
 ```
 pip install -r requirements.txt
 python analysis.py
 ```
-
-Results: results are written to results.json (and figures/ if available).
+Outputs `results.json` and `figures/macro_f1_comparison.png`.
 
 ## Reference
 

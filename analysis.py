@@ -74,10 +74,19 @@ def main():
     y = labels.label.to_numpy()
     print("Features computed.")
 
-    # Single stratified 70/30 node-level split with fixed seed
-    if pd.Series(y).value_counts().min() < 2:
-        sys.exit("Some department has fewer than 2 nodes; stratified split impossible")
-    idx_tr, idx_te = train_test_split(np.arange(len(y)), test_size=0.3, stratify=y, random_state=SEED)
+    # Single stratified 70/30 node-level split with fixed seed.
+    # Departments with only one node cannot be split across train and test, so those
+    # nodes are always placed in the training set; the rest is split stratified 70/30.
+    counts = pd.Series(y).value_counts()
+    singleton_labels = counts[counts < 2].index
+    is_single = np.isin(y, singleton_labels)
+    all_idx = np.arange(len(y))
+    rest_idx = all_idx[~is_single]
+    single_idx = all_idx[is_single]
+    if len(single_idx):
+        print(f"{len(single_idx)} node(s) in singleton department(s) kept in training set")
+    idx_rest_tr, idx_te = train_test_split(rest_idx, test_size=0.3, stratify=y[rest_idx], random_state=SEED)
+    idx_tr = np.concatenate([idx_rest_tr, single_idx])
     ytr, yte = y[idx_tr], y[idx_te]
     Xb_tr, Xb_te = X_all[BASE_COLS].iloc[idx_tr], X_all[BASE_COLS].iloc[idx_te]
     Xe_tr, Xe_te = X_all.iloc[idx_tr], X_all.iloc[idx_te]
@@ -136,7 +145,7 @@ def main():
 
     out = {
         "question": "Can a class-balanced, CV-tuned LightGBM model with neighbourhood structure features beat a standard random forest on structural features at predicting labelled community membership of nodes in a public communication network?",
-        "method": "Stratified 70/30 node split (seed 42) on SNAP email-Eu-core with department labels as community stand-in. Baseline: random forest on degree, in/out-degree, clustering, PageRank. Improved: class-balanced LightGBM tuned by 5-fold CV on training nodes, with added neighbour-degree statistics, k-core and reciprocity features. Test set used once per model; models run with seeds 42, 43, 44.",
+        "method": "Stratified 70/30 node split (seed 42) on SNAP email-Eu-core with department labels as community stand-in; nodes in single-node departments (which cannot be split) are kept in training. Baseline: random forest on degree, in/out-degree, clustering, PageRank. Improved: class-balanced LightGBM tuned by 5-fold CV on training nodes, with added neighbour-degree statistics, k-core and reciprocity features. Test set used once per model; models run with seeds 42, 43, 44.",
         "dataset": {
             "name": "SNAP email-Eu-core (department labels)",
             "source_url": EDGES_URL + " ; " + LABELS_URL,
@@ -151,7 +160,7 @@ def main():
         "baseline": "Standard random forest (500 trees, default settings, no class weighting) on basic per-node structural features: degree, in-degree, out-degree, clustering coefficient, PageRank.",
         "improved": "Class-balanced LightGBM with hyper-parameters chosen by 5-fold CV macro-F1 on training nodes, using the same basic features plus neighbour-degree mean/max/std, neighbour PageRank and clustering means, reciprocity fraction and k-core number.",
         "metrics": m,
-        "notes": "Stand-in for the paper's darknet forum data, which is not public; email department labels are not cybercrime communities. Only 3 model seeds vary; the split is fixed, so the std reflects model randomness only. Structural features are computed on the full graph without labels (transductive, label-free). Tuning used a small grid; test scores were not used for selection. Results on ~1,000 nodes with 42 classes are noisy, especially for rare departments.",
+        "notes": "Stand-in for the paper's darknet forum data, which is not public; email department labels are not cybercrime communities. Only 3 model seeds vary; the split is fixed, so the std reflects model randomness only. Nodes belonging to departments with a single member cannot be stratified, so they are always placed in training (the test split is stratified over all other nodes). Structural features are computed on the full graph without labels (transductive, label-free). Tuning used a small grid; test scores were not used for selection. Results on ~1,000 nodes with 42 classes are noisy, especially for rare departments.",
         "runtime_seconds": round(time.time() - t0, 1),
     }
     with open("results.json", "w", encoding="utf-8") as f:

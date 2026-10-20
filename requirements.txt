@@ -1,6 +1,7 @@
 requests
 pandas
 numpy
+scipy
 networkx
 scikit-learn
 lightgbm
