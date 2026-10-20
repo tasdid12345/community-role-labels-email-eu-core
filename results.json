@@ -1,0 +1,33 @@
+{
+  "question": "Can a class-balanced, CV-tuned LightGBM model with neighbourhood structure features beat a standard random forest on structural features at predicting labelled community membership of nodes in a public communication network?",
+  "method": "Stratified 70/30 node split (seed 42) on SNAP email-Eu-core with department labels as community stand-in; nodes in single-node departments (which cannot be split) are kept in training. Baseline: random forest on degree, in/out-degree, clustering, PageRank. Improved: class-balanced LightGBM tuned by 5-fold CV on training nodes, with added neighbour-degree statistics, k-core and reciprocity features. Test set used once per model; models run with seeds 42, 43, 44.",
+  "dataset": {
+    "name": "SNAP email-Eu-core (department labels)",
+    "source_url": "https://snap.stanford.edu/data/email-Eu-core.txt.gz ; https://snap.stanford.edu/data/email-Eu-core-department-labels.txt.gz",
+    "n_rows": 1005,
+    "n_train": 704,
+    "n_test": 301,
+    "same_as_paper": false,
+    "baseline_is_papers_method": false
+  },
+  "metric_name": "macro-F1 on held-out test nodes",
+  "higher_is_better": true,
+  "baseline": "Standard random forest (500 trees, default settings, no class weighting) on basic per-node structural features: degree, in-degree, out-degree, clustering coefficient, PageRank.",
+  "improved": "Class-balanced LightGBM with hyper-parameters chosen by 5-fold CV macro-F1 on training nodes, using the same basic features plus neighbour-degree mean/max/std, neighbour PageRank and clustering means, reciprocity fraction and k-core number.",
+  "metrics": {
+    "cv_best_macro_f1": 0.1713140352431783,
+    "baseline_score": 0.06319121034185389,
+    "baseline_score_std": 0.0010412604797692849,
+    "baseline_weighted_f1": 0.14002124710898933,
+    "baseline_accuracy": 0.16057585825027684,
+    "baseline_logloss": 9.682047319667205,
+    "improved_score": 0.16133597284964504,
+    "improved_score_std": 0.0,
+    "improved_weighted_f1": 0.2706779151858973,
+    "improved_accuracy": 0.27906976744186046,
+    "improved_logloss": 3.313206415228361,
+    "improvement": 0.09814476250779115
+  },
+  "notes": "Stand-in for the paper's darknet forum data, which is not public; email department labels are not cybercrime communities. Only 3 model seeds vary; the split is fixed, so the std reflects model randomness only. Nodes belonging to departments with a single member cannot be stratified, so they are always placed in training (the test split is stratified over all other nodes). Structural features are computed on the full graph without labels (transductive, label-free). Tuning used a small grid; test scores were not used for selection. Results on ~1,000 nodes with 42 classes are noisy, especially for rare departments.",
+  "runtime_seconds": 110.4
+}
