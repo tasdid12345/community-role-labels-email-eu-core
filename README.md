@@ -22,6 +22,29 @@ python analysis.py
 ```
 Outputs `results.json` and `figures/macro_f1_comparison.png`.
 
+## Results (latest run)
+
+On the SNAP email-Eu-core network with department labels, a standard random forest on basic node structural features reached 6.3% macro-F1 on held-out test nodes, while my class-balanced, CV-tuned LightGBM with neighbourhood features reached 16.1%, a gain from a noisy single split.
+
+| Metric | Value |
+|---|---|
+| cv_best_macro_f1 | 0.1713 |
+| baseline_score | 0.06319 |
+| baseline_score_std | 0.001041 |
+| baseline_weighted_f1 | 0.14 |
+| baseline_accuracy | 0.1606 |
+| baseline_logloss | 9.682 |
+| improved_score | 0.1613 |
+| improved_score_std | 0 |
+| improved_weighted_f1 | 0.2707 |
+| improved_accuracy | 0.2791 |
+| improved_logloss | 3.313 |
+| improvement | 0.09814 |
+
+Run on 2026-10-20. Full output: [results.json](results.json) · [run.log](run.log)
+
+Notes: Stand-in for the paper's darknet forum data, which is not public; email department labels are not cybercrime communities. Only 3 model seeds vary; the split is fixed, so the std reflects model randomness only. Nodes belonging to departments with a single member cannot be stratified, so they are always placed in training (the test split is stratified over all other nodes). Structural features are computed on the full graph without labels (transductive, label-free). Tuning used a small grid; test scores were not used for selection. Results on ~1,000 nodes with 42 classes are noisy, especially for rare departments.
+
 ## Reference
 
 This project is motivated by the following paper:
